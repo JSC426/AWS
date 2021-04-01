@@ -8,3 +8,7 @@
 * Create Open Ended Sorting Tool using TensorFlow and BERT embeddings
 ## iTerm-SetUp
 * Shell files for AWS aliases and main zshrc file
+## EMR
+* Two create EMR files with corresponding bootstrap scripts
+## Set Up CLI
+* Python script for setting up CLI
