@@ -1,0 +1,134 @@
+ #AWS related alias using AWSCLI
+ BastionPubIp='34.203.78.63'
+ BastionInstanceId=''
+ DenaliInstanceId=''
+ RainierInstanceId=''
+
+ # S3
+ alias lss3hr='aws s3 ls --summarize --human-readable'
+
+ function lss3 {
+     lss3hr $1
+ }
+
+ function lss3lake {
+     lss3hr studiosresearch-lake/$1
+ }
+
+ function lss3spring {
+     lss3hr studiosresearch-hotspring/$1
+ }
+
+ function lss3proj {
+     lss3hr studiosresearch-projects/$1
+ }
+
+ function lss3compl {
+     lss3hr studiosresearch-projects/customerTitleCompletion/$1
+ }
+
+ function lss3seg {
+     lss3hr studiosresearch-projects/customerSegmentation/$1
+ }
+
+ function lss3redsea {
+     lss3hr studiosresearch-redshift-red-sea/$1
+ }
+
+ # s3 cp no keys
+ function cps3 {
+     aws s3 cp s3://studiosresearch-projects/$1 $2
+ }
+
+ # s3 list object metadata, default to studiosresearch bucket
+ function shows3meta {
+     aws s3api head-object --bucket studiosresearch-projects --key $1
+ }
+
+ # EBS
+ alias lsebs="aws ec2 describe-volumes --query 'Volumes[].{id:VolumeId,state:State,size:Size}' --output text | (echo -e 'volumeId\tstatus\tsize' && cat) | csvlook -t"
+ # EC2
+ alias lsec2running="aws ec2 describe-instances --query 'Reservations[*].Instances[*].{id:InstanceId, type:InstanceType, PublicDnsName:PublicDnsName, PrivateDnsName:PrivateDnsName, state:State.Name, Tag0:        Tags[0].Value}' --output text | grep running | (echo -e 'PrivateIp\tPublicIp\tName\tInstanceId\tStatus\tType' && cat) | csvlook -t"
+ alias lsec2="aws ec2 describe-instances --query 'Reservations[*].Instances[*].{id:InstanceId, type:InstanceType, PublicDnsName:PublicDnsName, PrivateDnsName:PrivateDnsName, state:State.Name, Tag0:Tags[0].       Value}' --output text |(echo -e 'PrivateIp\tPublicIp\tName\tInstanceId\tStatus\tType' && cat) | csvlook -t"
+ alias startec2="aws ec2 start-instances --instance-ids"
+ alias stopec2="aws ec2 stop-instances --instance-ids"
+ # too dangerous. accidentally kills
+ # alias killec2="aws ec2 terminate-instances --instance-ids"
+ function killec2force {
+     echo "turning off terminatin-protection for instance $1"
+     aws ec2 modify-instance-attribute --instance-id $1 --no-disable-api-termination
+     echo "terminating instance $1"
+     aws ec2 terminate-instances --instance-ids $1
+ }
+
+ # turn on/off ec2 nodes
+ alias rainierup='startec2  $RainierInstanceId '
+ alias rainierdown='stopec2 $RainierInstanceId '
+ alias denaliup='startec2   $DenaliInstanceId '
+ alias denalidown='stopec2  $DenaliInstanceId '
+ alias bastionup='startec2  $BastionInstanceId'
+ alias bastiondown='stopec2 $BastionInstanceId'
+
+ # EMR
+ alias lsemr="aws emr list-clusters --query 'Clusters[*].{Name:Name, Id:Id, state:Status.State}' --output text | grep -v TERMINAT | (echo -e 'Name\tId\tStatus' && cat) | csvlook -t"
+ alias lsemrwaiting="aws emr list-clusters --query 'Clusters[*].{Name:Name, Id:Id, state:Status.State}' --output text | grep WAITING | (echo -e 'Name\tId\tStatus' && cat) | csvlook -t"
+ alias lsemrrunning="aws emr list-clusters --query 'Clusters[*].{Name:Name, Id:Id, state:Status.State}' --output text | grep RUNNING | (echo -e 'Name\tId\tStatus' && cat) | csvlook -t"
+ alias lsemrstarting="aws emr list-clusters --query 'Clusters[*].{Name:Name, Id:Id, state:Status.State}' --output text | grep STARTING | (echo -e 'Name\tId\tStatus' && cat) | csvlook -t"
+
+ # EMR
+ function lsemrmasterip {
+           aws emr describe-cluster --cluster-id $1 --query 'Cluster.{Name:Name,MasterDnsName:MasterPublicDnsName}' --output text
+   }
+
+ function lsemrip {
+         aws emr list-instances --cluster-id $1 --query 'Instances[*].{InstanceGroup:InstanceGroupId, InstanceId:Ec2InstanceId, PrivIP:PrivateDnsName}' --output text | sort
+ }
+
+ function killemr {
+     echo "turning off terminatin-protection for cluster $1"
+     aws emr modify-cluster-attributes --cluster-id $1 --no-termination-protected
+     echo "terminating cluster $1"
+     aws emr terminate-clusters --cluster-ids $1
+ }
+
+ # ssh to Bastion with pem key added in ssh-add
+ function ssh2bast {
+     if [[ -z $(ssh-add -l | grep -E '.ssh/.*\.pem') ]]; then
+         echo "adding pem to with ssh-add"
+         ssh-add ~/.ssh/*2019q2.pem
+         ssh-add -l
+     else
+         echo "pem key already attached to ssh agent"
+         ssh-add -l
+     fi
+     # -o ServerAliveInterval could be set in ~/.ssh/config and not needed on ssh command
+     # ssh -A -o ServerAliveInterval=60 ec2-user@BastionPubIp
+     ssh -A ec2-user@${BastionPubIp}
+ }
+
+ # ssh with dynamic port forwarding to Bastion
+ function sshpfbast {
+     if [[ -z $(ssh-add -l | grep -E '.ssh/.*\.pem') ]]; then
+         echo "adding pem to with ssh-add"
+         ssh-add  ~/.ssh/*.pem
+         ssh-add -l
+     else
+         echo "pem key already attached to ssh agent"
+         ssh-add -l
+     fi
+     # -o ServerAliveInterval could be set in ~/.ssh/config and not needed on ssh command
+     # ssh -A -o ServerAliveInterval=60 ec2-user@BastionPubIp
+     ssh -ND 8157 ec2-user@${BastionPubIp}
+ }
+
+ # scp from/to Bastion
+ function scptoBastion {
+     echo "copying local file $1 to Bastion"
+     scp $1 ec2-user@${BastionPubIp}:$2
+ }
+
+ function scpfromBastion {
+     echo "copying local file $1 to Bastion"
+     scp ec2-user@${BastionPubIp}:$2 $1
+ }
+
