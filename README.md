@@ -13,5 +13,5 @@
 ## Set Up CLI
 * Python script for setting up CLI
 ## AWSlabs
-* Very useful for aws and has CloudFormation templates
+* Very useful for aws and has CloudFormation templates and other AWS code
 * Can be found [here](https://github.com/awslabs)
