@@ -15,3 +15,4 @@
 ## AWSlabs
 * Very useful for aws and has CloudFormation templates
 * Can be found [here](https://github.com/awslabs)
+* [AWS Blogs](https://aws.amazon.com/blogs/aws/) is very useful and especially Devops blog
