@@ -11,7 +11,7 @@
 ## EMR
 * Two create EMR files with corresponding bootstrap scripts
 ## Set Up CLI
-* Python script for setting up CLI
+* Python script for setting up CLI like work
 ## AWSlabs
 * Very useful for aws and has CloudFormation templates
 * Can be found [here](https://github.com/awslabs)
